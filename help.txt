@@ -1,0 +1,66 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+CALLIOPE HELP FILE
+V01 - 29.12.15 - GK
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+_________________________
+1. Starting a new project
+
+ProjectDefaults_XXX     generate your ProjectDefaults file from a template to define backup locations, paths, etc. related to your project.
+newProjectExpLog        create a new project entry in the ExpLog database
+listProjectsExplog      shows a list of existing projects in the ExpLog database
+newMouseExpLog          create a new mouse in the ExpLog database
+
+__________________
+2. backing up data
+
+primary_backup          use to backup data from temp locations on recording rigs to RawData directories on servers. Note this funciton uses the paths defined in your ProjectDefaults file.
+
+_______________________________________________
+3. Registering, ROI-ing, & calculation activity
+
+a. Use calliope to register the data ('reg. dir' button). This will take about as long as acquisition took. 
+b. Use calliope to select ROIs ('select ROIs' button). 
+c. Use calliope to calculate activity ('calc act' button). 
+
+proj_info                   shows all sites of a project
+check_siteROIs              displays the current ROI-ing status, how many ROIs selected etc. for all data of one site. graphically displays ROIs.
+change_siteID               change the ID of a site from one experiment to another.
+correct_dxdy                use to fix registration by replacing registration of one layer with another, etc.
+register_exp_downsample     register again downsampling the data (i.e. averaging) - start with 3
+register_exp_fixoutliers    try to correct single outliers
+delete_roi                  delete single roi during ROI-ing
+
+_________________________
+4. generating a meta file
+
+set_adata_code          use this GUI to set the adata code of your experiments. The idea here is that you can group experiments. 
+generateMetaInfo        use this file to generate a meta info file. This is an excel file stored on M that can be modified manually to add tags and information to individual experiments that are integrated into the meta file. 
+get_proj_metaData       use to generate a project meta file. 
+fix_my_meta_file_log    use to add descriptions to the meta file log
+
+___________________
+5. general analysis
+
+trig2snps               calculates snippets of activity for given indices
+plotTriggeredAverage    plots average triggered activity, e.g. cell on PS
+clap                    clear all variables in workspace except proj_meta
+ca                      close all figures except calliope
+act2mat			converts all zls of one site and tp to a matrix
+
+_____________________
+6. managing your data
+
+check_disk_space        check how much disk space is free on all servers
+check_backup            checks backup status of one animal, project or user
+clean_backup            lists all files in RawData directories that are not in ExpLog
+check_archive           checks data use in the archive
+archive_project         copy all data of one project to the archive
+
+_______________________
+7. publishing your work
+
+create_submissionArchive     this function will genrate a snapshot of all the code necessary to generate your figures. you should have one core script "generate_XXX_figures" where XXX is your project ID that generates all figures in the manuscript. 
+
+% EOF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
