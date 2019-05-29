@@ -7,14 +7,13 @@ function [adata,path]=load_adata(ExpID,ws,ExpLog,varargin)
 %
 % 23.01.2018 FW
 
-if ~exist('ExpLog','var'), ExpLog=getExpLog; end
+if ~exist('ExpLog','var') || isempty(ExpLog), ExpLog=getExpLog; end
 if ~exist('ws','var') || isempty(ws), ws='default'; end
 if ~exist('varargin','var') || isempty(varargin), varargin={}; end
 
 [adata,path,filename]=deal([]);
 
 adata_dir=set_lab_paths;
-ExpLog=getExpLog;
 
 %find adata_file (see also find_adata_file)
 idx=find([ExpLog.stackid{:}]==ExpID);

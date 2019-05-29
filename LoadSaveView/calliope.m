@@ -386,12 +386,12 @@ function load_callback(e,h,ExpLog,cah,adata_dir)
 [~,ExpIDs,~,~]=get_menu_data(ExpLog,cah,adata_dir);
 set(cah.title_string,'string',['loaded Exp ' num2str(ExpIDs(get(cah.exp_select,'value'))) ' - ' datestr(now,13)]);
 disp(['Loading Exp --- ' num2str(ExpIDs(get(cah.exp_select,'value'))) ' --- ' datestr(now)])
-disp('clearing data to prevent mismatch!');
-evalin('base','clear data;');
 ftypes=get(cah.ftypes,'string');
 if sum(strcmp(ftypes,'610.bin') + strcmp(ftypes,'525.bin') + strcmp(ftypes,'.wid'))==0
     just_behave=1;
 else
+    disp('clearing data to prevent mismatch!');
+    evalin('base','clear data;');
     just_behave=0;
 end
 load_exp(ExpIDs(get(cah.exp_select,'value')),adata_dir,ftypes(get(cah.ftypes,'value')),ExpLog,'base',just_behave);
@@ -724,7 +724,7 @@ end
 ExpGroup=ExpGroup(sort(b));
 
 for ind=1:length(ExpIDs)
-    if sum(adata_list_num()==ExpIDs(ind))
+    if sum(adata_list_num==ExpIDs(ind))
         ExpStrs{ind}=['A. ' ExpStrs{ind} ' - ' mouse_IDs{ExpIDs_ind(ind)}];
     else
         ExpStrs{ind}=[ExpStrs{ind} ' - ' mouse_IDs{ExpIDs_ind(ind)}];

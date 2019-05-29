@@ -1,4 +1,4 @@
-function []=check_siteROIs(siteID,Acode,show_figs)
+function []=check_siteROIs(siteID,Acode,show_figs,ExpLog)
 % check_siteROIs(siteID,Acode,show_figs)
 % checks the alignment of the ROIs of one site across different time points
 % siteID: the site ID as in the ExpLog database
@@ -22,7 +22,7 @@ end
 adata_dir=set_lab_paths;
 rd_dir = get_data_path(siteID);
 
-ExpLog = getExpLog;
+if ~exist('ExpLog','var') || isempty(ExpLog), ExpLog = getExpLog; end
 
 cur_exps=unique(cell2mat(ExpLog.expid(cell2mat(ExpLog.siteid)==siteID)));
 
@@ -102,7 +102,7 @@ catch err
             nbr_piezo_layers=readini([adata(1).fnames{1}(1:end-3) 'ini'],'piezo.nbrlayers');
         catch err
             if  strcmp(err.identifier,'MATLAB:FileIO:InvalidFid') %this error is probably when adata is old and new data is located in a different location
-                data_dir=get_data_path(siteID);
+                data_dir=get_data_path(siteID,[],ExpLog);
                 fnames=regexprep((adata(1).fnames),'.*RawData\\',strrep(data_dir,'\','\\'),'ignorecase'); %replace data_dir with dir get_data_path
                 nbr_piezo_layers=readini([fnames{1}(1:end-3) 'ini'],'piezo.nbrlayers');
             else

@@ -46,7 +46,7 @@ disp(char(10));
 
 for siteID=siteIDs
     try
-        check_siteROIs(siteID,[],showfigs);
+        check_siteROIs(siteID,[],showfigs,ExpLog);
     catch me
         warning('ERROR IN SITEID %d (comment of first stack: %s):\n %s (%s)',siteID,ExpLog.comment{find([ExpLog.stackid{:}]==siteID)} ,me.message,me.identifier)
     end

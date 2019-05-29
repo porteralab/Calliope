@@ -8,7 +8,7 @@ function [data,nbr_frames]=load_bin_zlayer(fnames,nbr_piezo_layers,z_layer,apply
 %
 % FW 04.04.2018
 
-if nargin==0 && ishandle(1001) 
+if nargin==0 && ishandle(1001)
     warning('Loading ExpID (%i) from open calliope window.\n',calliope_getCurStack);
     fnames=calliope_getCurStack;
 end
@@ -26,8 +26,10 @@ end
 if applyreg %load whole exp
     warning('loading the whole experiment...');
     ExpLog=getExpLog;
-    expid=ExpLog.expid{[ExpLog.stackid{:}]==expid};
-    fnames=getfield(read_info_from_ExpLog(expid),'fnames');
+    if isnumeric(expid)
+        expid=ExpLog.expid{[ExpLog.stackid{:}]==expid};
+        fnames=getfield(read_info_from_ExpLog(expid),'fnames');
+    end
 end
 
 if nargin == 1 || ~exist('nbr_piezo_layers','var')
@@ -64,6 +66,9 @@ end
 
 if exist('applyreg','var') && applyreg==1
     data=apply_registration(data,fnames{1},z_layer);
+end
+if nargout==0
+   disp('NC: assigning ''data'' variable in ''base'' workspace');
 end
 end
 

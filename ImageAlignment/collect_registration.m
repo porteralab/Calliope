@@ -24,6 +24,7 @@ for ind=1:numel(ExpIDs)
     clear registration_log
     load(path,'registration_log');
     if exist('registration_log','var')
+        fprintf('%s\n',registration_log{:})
         [~,tok]=regexpi(registration_log,'.* nbr: (?:\d+)* : (\w+)* - (?:(fta: ))*(\w+)*(?:\w+: |, )*(\d+:\d+|\d+)*(?:, )*(\d+:\d+|\d+)*','once','match','tokens','warnings');
         for tnd=1:size(tok,2)
             just_words=~cellfun('isempty',regexpi(tok{tnd}(:)','[A-Z_-]+','match','once'));

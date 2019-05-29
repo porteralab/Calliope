@@ -70,11 +70,7 @@ if collision_count>0 && active_mode
     colliding_projs=unique(vertcat(colliding_projs{~cellfun('isempty',colliding_projs)}));
     fprintf('\n\n Following folders will be removed from PATH in this Matlab session:\n');
     fprintf(2,'%s\n',colliding_folders{:});
-    if ~strcmp(input('\n\n\n   xxxxxxxx   Press any key to allow calliope to superseed in conflict cases. [any key|n] xxxxxxxx   \n              restart Matlab to revert changes. \n              check your project collisions with repositry_collisions(''XXX'')       \n\n\n','s'),'n')
         rmpath(colliding_folders{:})
-    else
-        disp('You are living a dangerous life')
-    end
 end
 
 end

@@ -335,6 +335,12 @@ for knd=1:length(all_proj_siteIDs)
                     analysed_aux_data{aux_cnt,1}='ps_id';
                     analysed_aux_data{aux_cnt,2}=ps_id;
                     aux_cnt=aux_cnt+1;
+                elseif strcmp(pdef.aux_chans{wnd,2},'opto') && ismember(projID,{'VMM'})
+                    opto=aux_data(pdef.aux_chans{wnd,1},:);
+                    opto = filter(ones(1,200),1,opto);
+                    analysed_aux_data{aux_cnt,1}='opto';
+                    analysed_aux_data{aux_cnt,2}=opto;
+                    aux_cnt=aux_cnt+1;
                 elseif strcmp(pdef.aux_chans{wnd,2},'aud_trig')
                     aud_trig=aux_data(pdef.aux_chans{wnd,1},:);
                     if strcmp(projID,'ACX')

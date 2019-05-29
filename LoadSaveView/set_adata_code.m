@@ -4,7 +4,6 @@ function set_adata_code(siteID)
 % modified PZ 2015-12-14 remove line breaks from comments field
 % modified FW 2018-03-14 added calliope integration
 % modified FW 2018-04-19 argument to navigate to site
-% modified MH 2019-05-15 displays animalid in the drop down
 
 ExpLog=getExpLog;
 
@@ -75,7 +74,7 @@ set(sach.site_select,'callback',{@site_select_callback,sach})
 set(sach.update,'callback',{@update_callback,sach})
 
 if ishandle(1001) && nargin==0 %if calliope open, directly navigate to that project/site
-    warning('navigating to project/site currently open in calliope');
+    disp('navigating to project/site currently open in calliope');
     try
         adata_window=figure(1394);
         calliope_proj=handle(1001).Children(17).String{handle(1001).Children(17).Value};
@@ -113,8 +112,7 @@ projID=projIDs{get(sach.project_select,'value')};
 siteIDs=unique(cell2mat(ExpLog.siteid(strcmp(ExpLog.project,projID))));
 
 for ind=1:length(siteIDs)
-    mouse = cell2mat(ExpLog.animalid(find(cell2mat(ExpLog.siteid) == siteIDs(ind),1,'first')));
-    tmp{ind}=[num2str(siteIDs(ind)) '     ' mouse([1:3 end-2:end])];
+    tmp{ind}=num2str(siteIDs(ind));
 end
 siteIDs=tmp';
 set(sach.site_select,'String',siteIDs,'Value',1);
@@ -123,11 +121,9 @@ end
 function site_select_callback(hf,e,sach)
 
 ExpLog=get(sach.mf,'userdata');
-projIDs=get(sach.project_select,'String');
-projID=projIDs{get(sach.project_select,'value')};
-siteIDs=unique(cell2mat(ExpLog.siteid(strcmp(ExpLog.project,projID))));
-siteID=siteIDs(get(sach.site_select,'Value'));
 
+siteIDs=get(sach.site_select,'String');
+siteID=str2num(siteIDs{get(sach.site_select,'Value')});
 
 curr_inds=find(cell2mat(ExpLog.siteid)==siteID);
 [~,tmp_ind]=unique(cell2mat(ExpLog.expid(cell2mat(ExpLog.siteid)==siteID)),'first');
@@ -156,10 +152,8 @@ function update_callback(hf,e,sach)
 
 ExpLog=get(sach.mf,'userdata');
 
-projIDs=get(sach.project_select,'String');
-projID=projIDs{get(sach.project_select,'value')};
-siteIDs=unique(cell2mat(ExpLog.siteid(strcmp(ExpLog.project,projID))));
-siteID=siteIDs(get(sach.site_select,'Value'));
+siteIDs=get(sach.site_select,'String');
+siteID=str2num(siteIDs{get(sach.site_select,'Value')});
 
 curr_inds=find(cell2mat(ExpLog.siteid)==siteID);
 [~,tmp_ind]=unique(cell2mat(ExpLog.expid(cell2mat(ExpLog.siteid)==siteID)),'first');

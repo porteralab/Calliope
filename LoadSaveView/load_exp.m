@@ -67,6 +67,7 @@ end
 try
     if just_behave==0
         load([adata_dir '\' userID '\' mouse_id '\' adata_file]);
+         aux_files=regexprep((aux_files),'.*RawData\\+',strrep(data_dir,'\','\\'),'ignorecase'); %replace data_dir with dir get_data_path 
         if ~exist('mean_data','var')
             if ~exist('ROItrans','var');
                 if isa(ROIs,'cell')
@@ -162,7 +163,6 @@ end
 if load_aux
     % load the aux data - first try loading the data from the data
     % directory
-    aux_files=regexprep((aux_files),'.*RawData\\+',strrep(data_dir,'\','\\'),'ignorecase'); %replace data_dir with dir get_data_path 
     aux_data=[];
     for ind=1:length(aux_files)
         if exist([aux_files{ind}],'file');
