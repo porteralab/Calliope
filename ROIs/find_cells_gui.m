@@ -43,9 +43,11 @@ orig_template=orig_template-min(orig_template(:));
 
 local_average = filter2(ones(ud.win_size)/ud.win_size^2,orig_template);
 ot_fil = orig_template./local_average;
+ot_fil(isnan(ot_fil)) = 0;
 
 local_average = filter2(ones(ud.win_size)/ud.win_size^2,template);
 t_fil = template./local_average;
+t_fil(isnan(t_fil)) = 0;
 if size(ot_fil,2)>size(t_fil,2)
     ot_fil=ot_fil(:,1:size(t_fil,2));
 elseif size(ot_fil,2)<size(t_fil,2)
