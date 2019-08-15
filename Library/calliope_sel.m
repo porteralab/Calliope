@@ -56,7 +56,14 @@ update(cal,element)
 element=cal.Children(15);
 tmp=num2str(ExpLog.stackid{idx});
 tmp=find_val_in_calliope(element,[tmp '(?= - \d* - )']);
-if isempty(tmp), tmp=find_val_in_calliope(element,tmp); end
+try
+    if isempty(tmp), tmp=find_val_in_calliope(element,tmp); end
+catch
+    if adataload~=-1
+        close all force;
+        calliope_sel(StackID,ExpLog,-1)
+    end
+end
 element.Value=tmp(1);
 update(cal,element)
 

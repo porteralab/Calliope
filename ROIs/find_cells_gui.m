@@ -43,7 +43,6 @@ orig_template=orig_template-min(orig_template(:));
 
 local_average = filter2(ones(ud.win_size)/ud.win_size^2,orig_template);
 ot_fil = orig_template./local_average;
-ot_fil(isnan(ot_fil)) = 0;
 
 local_average = filter2(ones(ud.win_size)/ud.win_size^2,template);
 t_fil = template./local_average;
@@ -662,7 +661,7 @@ if min_cont<0
 end
 
 
-axes(h.a1);
+set(h.f,'CurrentAxes',h.a1)
 cla;
 hold off
 
@@ -678,7 +677,8 @@ end
 roiColors=jet(10);
 roiColors(1,:)=[0 1 0];
 
-for ii = 1:10
+if isfield(ud,'ROIs'), iis=unique([ud.ROIs.type])+1; else, iis=1:10; end
+for ii = iis
     overlay = imoverlay(overlay,bwperim(masks(:,:,ii)),roiColors(ii,:));
 end
 

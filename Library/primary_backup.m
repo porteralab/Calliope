@@ -40,6 +40,8 @@ if ~isempty(varargin)
 end
 
 warnings = {};
+disp('clearing ExpLog in ''base'' workspace'); 
+evalin('base','clear ExpLog');
 ExpLog=getExpLog;
 assignin('base','ExpLog', ExpLog);
 

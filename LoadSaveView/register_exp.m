@@ -144,10 +144,10 @@ if ~isa(dx,'cell')
         template_sec=mean(sec_data,3);
     end
     
-else
+else %if more than 1 piezo layer do this...
     act_map={};
     template={};
-    for rnd=1:length(dx)
+    for rnd=1:length(dx) %for every piezo layer...
         data{rnd}=shift_data(data{rnd},dx{rnd},dy{rnd});
         data{rnd}=correct_line_shift(data{rnd},mean(data{rnd},3));
         act_map{rnd}=calc_act_map(data{rnd});
@@ -159,7 +159,7 @@ else
             act_map_sec{rnd}=calc_act_map(sec_data{rnd});
             sta=1;
             sto=0;
-            for pnd=1:size(nbr_frames,2)
+            for pnd=1:size(nbr_frames,2) %for 2ndary channels: calculate template for every stack individually
                 sto=sto+nbr_frames(pnd)/length(dx);
                 template_sec{rnd}(:,:,pnd)=mean(sec_data{rnd}(:,:,sta:sto),3);
                 sta=sta+nbr_frames(pnd)/length(dx);

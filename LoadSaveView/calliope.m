@@ -67,6 +67,7 @@ function calliope(reload_adata_list,isdocked)
 %written by GK - 01.01.2012;
 %documented by DM - 08.05.2014;
 
+
 if ishandle(1001) %if calliope is open, don't open it again...
     figure(1001);
     return;
@@ -326,7 +327,6 @@ set(cah.mouse_select,'string',mouseIDs,'value',1);
 set(cah.exp_select,'string',ExpStrs,'value',1);
 set(cah.ftypes,'string','further specify selection')
 set(cah.comments,'string',comments{get(cah.exp_select,'value')});
-
 set(cah.user_select,'callback',{@user_select_callback,cah,ExpLog,adata_dir});
 set(cah.project_select,'callback',{@project_select_callback,cah,ExpLog,adata_dir});
 set(cah.mouse_select,'callback',{@mouse_select_callback,cah,ExpLog,adata_dir});
@@ -337,6 +337,77 @@ set(cah.check_reg_data,'callback',{@check_reg_callback,ExpLog,cah,adata_dir});
 set(cah.view_tif,'callback',{@view_tiff_callback,ExpLog,cah,adata_dir});
 set(cah.load_meta,'callback',{@load_meta_callback,cah});
 set(cah.hf,'HandleVisibility','off','IntegerHandle','on')
+
+set(cah.mouse_select,'ButtonDownFcn',@copy_animal);
+set(cah.exp_select,'ButtonDownFcn',@copy_exp);
+set(cah.ftypes,'ButtonDownFcn',{@copy_fname,ExpLog});
+set(cah.Acode,'ButtonDownFcn',{@set_adata});
+
+
+function set_adata(src,evt)
+figHandle = ancestor(src, 'figure');
+clickType = get(figHandle, 'SelectionType');
+modifier = get(figHandle, 'CurrentModifier');
+selected=str2double((regexp(figHandle.Children(15).String{figHandle.Children(15).Value},'(?<= - )[0-9]*','match','once')));
+fprintf('running set_adata_code for siteID [%i]... \n',selected)
+set_adata_code(selected)
+
+function copy_fname(src,evt,ExpLog)
+figHandle = ancestor(src, 'figure');
+clickType = get(figHandle, 'SelectionType');
+modifier = get(figHandle, 'CurrentModifier');
+ExpID=str2double((regexp(figHandle.Children(15).String{figHandle.Children(15).Value},'[0-9]*(?= - )','match','once')));
+[data_path,ExpIDinfo]=get_data_path(ExpID,[],ExpLog);
+path=[data_path ExpIDinfo.userID '\' ExpIDinfo.mouse_id  '\' 'S1-T' num2str(ExpID)];
+ext=regexprep(figHandle.Children(4).String{ max([figHandle.Children(4).Value 1]) },'\d+(.bin|.ini)','_ch$0');
+if ~isempty(data_path)
+    
+    if any(strcmp(clickType, {'extend','alt'}))
+        if isempty(modifier) || ~strcmp(modifier,'shift')
+            fprintf('found, path copied to clipboard: (%s)\n',[path ext]);
+            clipboard('copy',[path ext])
+        else
+            fprintf('found, navigating to file: %s\n',[path ext]);
+            system(['explorer.exe /select,' [path ext]] );
+        end
+    end
+
+end
+
+function copy_animal(src, evt)
+figHandle = ancestor(src, 'figure');
+clickType = get(figHandle, 'SelectionType');
+modifier = get(figHandle, 'CurrentModifier');
+selected=figHandle.Children(16).String{figHandle.Children(16).Value};
+fprintf('copied animal ''%s'' to clipboard\n',selected)
+clipboard('copy',selected)
+
+
+function copy_exp(src, evt)
+figHandle = ancestor(src, 'figure');
+clickType = get(figHandle, 'SelectionType');
+modifier = get(figHandle, 'CurrentModifier');
+if any(strcmp(clickType, {'extend','alt'})) 
+    if isempty(modifier) || ~strcmp(modifier,'shift')
+        selected=str2double((regexp(figHandle.Children(15).String{figHandle.Children(15).Value},'[0-9]*(?= - )','match','once')));
+        fprintf('copied expID [%i] to clipboard\n',selected)
+    else
+        selected=str2double((regexp(figHandle.Children(15).String{figHandle.Children(15).Value},'(?<= - )[0-9]*','match','once')));
+        fprintf('copied siteID [%i] to clipboard\n',selected)
+    end
+    clipboard('copy',selected)
+end
+
+function copy_stack(src,~,ExpLog)
+figHandle = ancestor(src, 'figure');
+clickType = get(figHandle, 'SelectionType');
+ExpID=str2double((regexp(figHandle.Children(15).String{figHandle.Children(15).Value},'[0-9]*(?= - )','match','once')));
+selected=getfield([ExpLog.stackid{[ExpLog.expid{:}]==ExpID}],{figHandle.Children(3).Value});
+if isempty(selected), selected=1; end
+if strcmp(clickType, 'alt')
+    fprintf('copied stackID [%i] to clipboard\n',selected)
+    clipboard('copy',selected)
+end
 
 function user_select_callback(e,h,cah,ExpLog,adata_dir)
 set(cah.project_select,'string','loading...');
@@ -352,7 +423,7 @@ function project_select_callback(e,h,cah,ExpLog,adata_dir)
 ud=get(cah.hf,'UserData');
 set(cah.mouse_select,'value',1);
 [~,~,~,~,mouseIDs,~,projectIDs,~]=get_menu_data(ExpLog,cah,adata_dir);
-set(cah.mouse_select,'value',1,'string',mouseIDs);
+set(cah.mouse_select,'value',numel(cah.mouse_select.String),'string',mouseIDs);
 proj=projectIDs{get(cah.project_select,'value')};
 pdef=getProjDef(proj);
 % set(cah.ftypes,'UserData',pdef.calliope_load_filetypes_def);
@@ -540,6 +611,9 @@ if evalin('base','exist(''data'',''var'')')
 elseif strcmpi(cell2mat(cah.ftypes.String(cah.ftypes.Value)'),'.lvd')
     disp('Running checkAux() on selected stackID...')
     evalin('base','checkAux();')
+elseif strcmpi(cell2mat(cah.ftypes.String(cah.ftypes.Value)'),'.oii')
+    disp('Displaying Fourier maps')
+    evalin('base','showFourierMaps();')
 else
     disp('load *.bin to use data explorer');
 end

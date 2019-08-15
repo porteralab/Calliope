@@ -79,6 +79,21 @@ if recalc
     load_exp(ExpID,adata_dir,load_fype,ExpLog,'caller')
 end
 
+
+% check if it should load secondary channels for this expID
+try
+    nbr_piezo_layers=readini([ExpInfo.fnames{1}(1:end-3) 'ini'],'piezo.nbrlayers');
+catch
+    nbr_piezo_layers=1;
+    disp('ATTENTION - could not read nbr of piezo layers from ini file')
+end
+if ~isempty(ExpInfo.sec_fnames)
+    sec_data=load_bin(ExpInfo.sec_fnames,nbr_piezo_layers);
+    process_sec=true;
+else
+    process_sec=false;
+end
+
 if man_corr
     if recalc
         disp(['Now registering data on new dx dy values and correcting line shift']);
@@ -87,6 +102,20 @@ if man_corr
             data=correct_line_shift(data,mean(data,3));
             act_map=calc_act_map(data);
             template=mean(data,3);
+            
+            if process_sec
+                sec_data=shift_data(sec_data,dxNew,dyNew);
+                sec_data=correct_line_shift(sec_data,mean(sec_data,3));
+                act_map_sec=calc_act_map(sec_data);
+                sta=1;
+                sto=0;
+                for pnd=1:size(nbr_frames,2) %for 2ndary channels: calculate template for every stack individually
+                    sto=sto+nbr_frames(pnd)/length(dx);
+                    template_sec(:,:,pnd)=mean(sec_data(:,:,sta:sto),3);
+                    sta=sta+nbr_frames(pnd)/length(dx);
+                end
+            end
+            
         else
             act_map={};
             template={};
@@ -96,9 +125,25 @@ if man_corr
                 act_map{rnd}=calc_act_map(data{rnd});
                 template{rnd}=mean(data{rnd},3);
             end
+            
+            if process_sec
+                sec_data{rnd}=shift_data(sec_data{rnd},dxNew{rnd},dyNew{rnd});
+                sec_data{rnd}=correct_line_shift(sec_data{rnd},mean(sec_data{rnd},3));
+                act_map_sec{rnd}=calc_act_map(sec_data{rnd});
+                sta=1;
+                sto=0;
+                for pnd=1:size(nbr_frames,2) %for 2ndary channels: calculate template for every stack individually
+                    sto=sto+nbr_frames(pnd)/length(dx);
+                    template_sec{rnd}(:,:,pnd)=mean(sec_data{rnd}(:,:,sta:sto),3);
+                    sta=sta+nbr_frames(pnd)/length(dx);
+                end
+            end
+            
         end
         curr_file_struct.act_map=act_map;
         curr_file_struct.template=template;
+        curr_file_struct.template_sec=template_sec;
+        curr_file_struct.act_map_sec=act_map_sec;
     end
     curr_file_struct.dx=dxNew;
     curr_file_struct.dy=dyNew;
@@ -112,6 +157,19 @@ else
             data{rnd}=correct_line_shift(data{rnd},mean(data{rnd},3));
             curr_file_struct.act_map{rnd}=calc_act_map(data{rnd});
             curr_file_struct.template{rnd}=mean(data{rnd},3);
+            if process_sec
+                sec_data{rnd}=shift_data(sec_data{rnd},correct_dx,correct_dy);
+                sec_data{rnd}=correct_line_shift(sec_data{rnd},mean(sec_data{rnd},3));
+                curr_file_struct.act_map_sec{rnd}=calc_act_map(sec_data{rnd});
+                sta=1;
+                sto=0;
+                for pnd=1:size(nbr_frames,2) %for 2ndary channels: calculate template for every stack individually
+                    sto=sto+nbr_frames(pnd)/length(dx);
+                    curr_file_struct.template_sec{rnd}(:,:,pnd)=mean(sec_data{rnd}(:,:,sta:sto),3);
+                    sta=sta+nbr_frames(pnd)/length(dx);
+                end
+            end
+            
         end
         curr_file_struct.dx{rnd}=correct_dx;
         curr_file_struct.dy{rnd}=correct_dy;

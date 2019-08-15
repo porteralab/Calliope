@@ -48,6 +48,7 @@ plotTriggeredAverage    plots average triggered activity, e.g. cell on PS
 clap                    clear all variables in workspace except proj_meta
 ca                      close all figures except calliope
 act2mat			converts all zls of one site and tp to a matrix
+snp_browser		visualize trig2snps one or several output(s)
 
 _____________________
 6. managing your data

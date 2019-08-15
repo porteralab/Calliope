@@ -6,15 +6,23 @@ function [] = register_exp_downsample(ExpID,fta,template_frames)
 % When specifying frame numbers to register against, always use
 % frames after 10, as due to instability of mirrors, galvos,..., frames 1 to
 % 10 are unstable and not suitable for registration (e.g. 11-21, or 21-30).
+% also fixes outliers automatically
 %
 %
 % documented by DM - 08.05.2014
 % modified by ML 2014-06-23
+% added calliope integration and default values FW 2019 
+
+if ishandle(1001) && (~exist('ExpID','var') || isempty(ExpID)), ExpID=calliope_getCurStack; disp('NC: getting currently selected stack in calliope'); end
+if ~exist('fta','var') || isempty(fta), fta=3; disp('NC: fta=3'); end
+if ~exist('template_frames','var') || isempty(template_frames), template_frames=11:30; disp('NC: template_frames=11:30'); end
 
 adata_dir=set_lab_paths;
 
 ExpInfo = read_info_from_ExpLog(ExpID,1);
 [adata_file,mouse_id,userID] = find_adata_file(ExpID,adata_dir);
+
+
 if ~isempty(adata_file)
     fname = [adata_dir ExpInfo.userID '\' ExpInfo.mouse_id '\' adata_file];
     curr_file_struct = load(fname);
@@ -32,9 +40,6 @@ else
     AFileExist=0;
 end
 
-if ~exist('template_frames','var')
-    template_frames=11:30;
-end
 
 try
     nbr_piezo_layers=readini([ExpInfo.fnames{1}(1:end-3) 'ini'],'piezo.nbrlayers');
@@ -57,6 +62,15 @@ end
 
 % % load the 2P data
 [data,curr_file_struct.nbr_frames]=load_bin(ExpInfo.fnames,nbr_piezo_layers);
+
+
+% check if it should load secondary channels for this expID
+if ~isempty(ExpInfo.sec_fnames)
+    sec_data=load_bin(ExpInfo.sec_fnames,nbr_piezo_layers);
+    process_sec=true;
+else
+    process_sec=false;
+end
 
 % % pre-allocate space for data
 % for knd=1:length(ExpInfo.fnames)
@@ -202,6 +216,21 @@ if ~isa(dx,'cell')
     data=correct_line_shift(data,mean(data,3));
     act_map=calc_act_map(data);
     template=mean(data,3);
+    
+    if process_sec
+        sec_data=shift_data(sec_data,dx,dy);
+        sec_data=correct_line_shift(sec_data,mean(sec_data,3));
+        act_map_sec=calc_act_map(sec_data);
+        sta=1;
+        sto=0;
+        for pnd=1:size(nbr_frames,2) %for 2ndary channels: calculate template for every stack individually
+            sto=sto+nbr_frames(pnd)/length(dx);
+            template_sec(:,:,pnd)=mean(sec_data(:,:,sta:sto),3);
+            sta=sta+nbr_frames(pnd)/length(dx);
+        end
+    end
+    
+    
 else
     act_map={};
     template={};
@@ -210,6 +239,21 @@ else
         data{rnd}=correct_line_shift(data{rnd},mean(data{rnd},3));
         act_map{rnd}=calc_act_map(data{rnd});
         template{rnd}=mean(data{rnd},3);
+            
+            if process_sec
+                sec_data{rnd}=shift_data(sec_data{rnd},dx{rnd},dy{rnd});
+                sec_data{rnd}=correct_line_shift(sec_data{rnd},mean(sec_data{rnd},3));
+                act_map_sec{rnd}=calc_act_map(sec_data{rnd});
+                sta=1;
+                sto=0;
+                for pnd=1:size(curr_file_struct.nbr_frames,2) %for 2ndary channels: calculate template for every stack individually
+                    sto=sto+curr_file_struct.nbr_frames(pnd)/length(dx);
+                    template_sec{rnd}(:,:,pnd)=mean(sec_data{rnd}(:,:,sta:sto),3);
+                    sta=sta+curr_file_struct.nbr_frames(pnd)/length(dx);
+                end
+            else
+                template_sec = {} ;
+            end
     end
 end
 
@@ -239,6 +283,7 @@ curr_file_struct.dx=dx;
 curr_file_struct.dy=dy;
 curr_file_struct.act_map=act_map;
 curr_file_struct.template=template;
+if exist('template_sec','var'), curr_file_struct.template_sec=template_sec; end
 save(fname,'-struct','curr_file_struct','-v7.3');
 
 disp('----Done fixing your registration...----');

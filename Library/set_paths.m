@@ -9,7 +9,7 @@ for knd=1:length(trunk_dirs)
     
     for ind=1:length(folder_list);
         if isempty(findstr(folder_list{ind},'.svn'))
-            addpath(folder_list{ind})
+            addpath(folder_list{ind},'-end')
         end
     end
 end

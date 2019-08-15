@@ -45,7 +45,7 @@ end
 if isfloat(Acode)
     Acode = num2str(Acode);
 end
-
+evalin('base','clear ExpLog; disp(''NC: cleared ExpLog'')')
 assignin('base','tmpAcode',str2double(Acode));
 load_ftypes={};
 load_ftypes{1}='.ini';
@@ -164,6 +164,7 @@ for knd=1:length(all_proj_siteIDs)
     for tp_cnt=1:length(cur_exps)
         if use_ach_flag
             pdef=parse_ach(pdef,cur_exps(tp_cnt));
+            pdef.aux_chans=pdef.aux_chans(cellfun('isempty',regexpi(pdef.aux_chans(:,2),'shutter|framegalvo')),:); %remove shutter and framegalvo channels
         end
         if strcmp(projID,'SCR')
             if cur_exps(tp_cnt)<=26875
@@ -212,7 +213,7 @@ for knd=1:length(all_proj_siteIDs)
                 catch err
                     if strcmp(err.identifier,'MATLAB:FileIO:InvalidFid')
                         %error probably caused by new file naming convetion
-                        nbr_piezo_layers=readini([orig.fnames{1}(1:end-3) 'ini'],'piezo.nbrlayers');
+                        nbr_piezo_layers=readini(regexprep((orig.fnames{1}),{'.*RawData\\+','.bin'},{strrep(data_dir,'\','\\'),'.ini'},'ignorecase'),'piezo.nbrlayers');
                     else
                         
                         nbr_piezo_layers=1;
@@ -337,7 +338,12 @@ for knd=1:length(all_proj_siteIDs)
                     aux_cnt=aux_cnt+1;
                 elseif strcmp(pdef.aux_chans{wnd,2},'opto') && ismember(projID,{'VMM'})
                     opto=aux_data(pdef.aux_chans{wnd,1},:);
-                    opto = filter(ones(1,200),1,opto);
+                    ons=find(diff(opto>0.2)==1);
+                    
+                    for ind=1:200
+                        opto(ons+ind+1)=median(opto(bsxfun(@plus,ons,[1:10]')));
+                    end
+                    
                     analysed_aux_data{aux_cnt,1}='opto';
                     analysed_aux_data{aux_cnt,2}=opto;
                     aux_cnt=aux_cnt+1;
@@ -592,7 +598,7 @@ for knd=1:length(all_proj_siteIDs)
             else
                 proj_meta(meta_cnt).rd(zl_cnt,tp_cnt).nbr_frames=nbr_frames;
                 for znd=1:size(analysed_aux_data,1)
-                    eval(['proj_meta(meta_cnt).rd(zl_cnt,tp_cnt).' analysed_aux_data{znd,1} '=analysed_aux_data{' num2str(znd) ',2};']);
+                    eval(['proj_meta(meta_cnt).rd(zl_cnt,tp_cnt).' regexprep( analysed_aux_data{znd,1},' ','_') '=analysed_aux_data{' num2str(znd) ',2};']);
                 end
             end
             

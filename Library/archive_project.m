@@ -1,4 +1,4 @@
-function results=archive_project(projID,hostname,varargin)
+function results=archive_project(projID,varargin)
 %% use this function to copy all data of one project to tape
 %  results=archive_project(projID,hostname,varargin)
 % GK 19.01.2016
@@ -31,8 +31,8 @@ warnings = {};
 ExpLog=getExpLog;
 assignin('base','ExpLog', ExpLog);
 
-source_dir = ['\\' hostname '\RawData\'];
-[~,~,archive_path]=define_backup_paths(1);
+% source_dir = ['\\' hostname '\RawData\'];
+[~,backup_paths,archive_path]=define_backup_paths(1);
 backup_loc = [archive_path '\'];
 
 % path md5.exe later on
@@ -52,34 +52,37 @@ sources_files = {};
 backup_files = {};
 total_size = 0;
 fprintf('\n');
-textprogressbar('Putting all file locations together:     ');
+wbh=waitbar(0,'Putting all file locations together:     ');
 for ind = 1:length(StackIDs)
-    textprogressbar(ind/length(StackIDs)*100);
+    waitbar(ind/length(StackIDs),wbh);
     
-    d = dir(fullfile(source_dir,user_id{ind},animal_id{ind},[ '*' num2str(StackIDs(ind)) '*']));
-    if size(d,1) > 0
-        total_size = total_size + sum([d.bytes]);
-        for knd = 1:size(d,1)
-            sources_files{end+1} = fullfile(source_dir,user_id{ind},animal_id{ind},d(knd).name);
-            backup_files{end+1} = fullfile(backup_loc,user_id{ind},animal_id{ind},d(knd).name);
+    for knd=1:size(backup_paths,1)
+        source_dir=backup_paths{knd,1};
+        d = dir(fullfile(source_dir,user_id{ind},animal_id{ind},[ '*' num2str(StackIDs(ind)) '*']));
+        if size(d,1) > 0
+            total_size = total_size + sum([d.bytes]);
+            for knd = 1:size(d,1)
+                sources_files{end+1} = fullfile(source_dir,user_id{ind},animal_id{ind},d(knd).name);
+                backup_files{end+1} = fullfile(backup_loc,user_id{ind},animal_id{ind},d(knd).name);
+            end
+            break
         end
     end
     
 end
-
+close(wbh);
 no_backup_files = size(backup_files,2);
-textprogressbar(' done');
 
 mdsum_c = zeros(1,no_backup_files);
 
-textprogressbar('Copying files and calculating MD5 checksum:                       ');
+wbh=waitbar(0,'Copying files and calculating MD5 checksum:');
 fprintf('\n')
 for ind = 1:no_backup_files
     % check whether directory exist
     if ~isdir(fileparts(backup_files{ind}))
         mkdir(fileparts(backup_files{ind}));
     end
-    textprogressbar(ind/no_backup_files*100);
+    waitbar(ind/no_backup_files,wbh);
     if ~exist(backup_files{ind},'file')
         fprintf('\n')
         fprintf(['  -> ' regexprep(sources_files{ceil(ind)},'\\','\\\\') ' >> ' regexprep(backup_files{ind},'\\','\\\\')]);      
@@ -111,8 +114,7 @@ for ind = 1:no_backup_files
         writeErrorLog(ExpID,'ARCHIVE MD5 checksum error')
     end
 end
-textprogressbar(' done');
-
+close(wbh);
 
 % plot summary
 messages{end+1} = ['Animal' char(9) char(9) '|StackID |' char(9) 'No.files |'...

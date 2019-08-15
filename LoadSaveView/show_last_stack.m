@@ -165,7 +165,10 @@ if exist('fname','var')
             data = reshape(data,dim(1),dim(2)*inidata.piezo.nbrlayers,dim(3)/inidata.piezo.nbrlayers);
         end
         
-        view_stack([data1;data]);
+        ims(:,:,1,:) = ntzo(data1);
+        ims(:,:,2,:) = ntzo(data);
+        ims(:,:,3,:) = zeros(size(data));
+        view_stack_RGB(ims);
     else
         for ind=1:size(fname,2)
             fname{ind}

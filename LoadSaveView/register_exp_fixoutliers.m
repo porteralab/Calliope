@@ -24,6 +24,14 @@ catch
     disp('ATTENTION - could not read nbr of piezo layers from ini file')
 end
 
+% check if it should load secondary channels for this expID
+if ~isempty(ExpInfo.sec_fnames)
+    process_sec=true;
+else
+    process_sec=false;
+end
+
+
 % save registration correaction log
 path_to_curr_file = eval(['which(''' mfilename ''')']);
 [~,svn_revision_nbr]=system(['svn info --show-item revision "' path_to_curr_file '"']);
@@ -167,13 +175,30 @@ if sum(go_on)>0
         end
         fclose(fi);
     end
-    
-    disp(['Now registering data on dx dy values and correcting line shift']);
+    if process_sec
+        sec_data=load_bin(ExpInfo.sec_fnames,nbr_piezo_layers);
+    end
+
+disp(['Now registering data on dx dy values and correcting line shift']);
     if ~isa(dx,'cell')
         data=shift_data(data,dx,dy);
         data=correct_line_shift(data,mean(data,3));
         act_map=calc_act_map(data);
         template=mean(data,3);
+        
+        if process_sec
+            sec_data=shift_data(sec_data,dx,dy);
+            sec_data=correct_line_shift(sec_data,mean(sec_data,3));
+            act_map_sec=calc_act_map(sec_data);
+            sta=1;
+            sto=0;
+            for pnd=1:size(nbr_frames,2) %for 2ndary channels: calculate template for every stack individually
+                sto=sto+nbr_frames(pnd)/length(dx);
+                template_sec(:,:,pnd)=mean(sec_data(:,:,sta:sto),3);
+                sta=sta+nbr_frames(pnd)/length(dx);
+            end
+        end
+        
     else
         act_map={};
         template={};
@@ -182,7 +207,22 @@ if sum(go_on)>0
             data{rnd}=correct_line_shift(data{rnd},mean(data{rnd},3));
             act_map{rnd}=calc_act_map(data{rnd});
             template{rnd}=mean(data{rnd},3);
+            
+            if process_sec
+                sec_data{rnd}=shift_data(sec_data{rnd},dx{rnd},dy{rnd});
+                sec_data{rnd}=correct_line_shift(sec_data{rnd},mean(sec_data{rnd},3));
+                act_map_sec{rnd}=calc_act_map(sec_data{rnd});
+                sta=1;
+                sto=0;
+                for pnd=1:size(nbr_frames,2) %for 2ndary channels: calculate template for every stack individually
+                    sto=sto+nbr_frames(pnd)/length(dx);
+                    template_sec{rnd}(:,:,pnd)=mean(sec_data{rnd}(:,:,sta:sto),3);
+                    sta=sta+nbr_frames(pnd)/length(dx);
+                end
+            end
         end
+        
+        
     end
     
     check_registration(dx,dy,template)
@@ -193,10 +233,14 @@ if sum(go_on)>0
             curr_file_struct.dy=cell2mat(dy);
             curr_file_struct.act_map=cell2mat(act_map);
             curr_file_struct.template=cell2mat(template);
+            curr_file_struct.act_map_sec=cell2mat(act_map_sec);
+            curr_file_struct.template_sec=cell2mat(template_sec);
         else
             curr_file_struct.dx=dx;
             curr_file_struct.dy=dy;
             curr_file_struct.act_map=act_map;
+            curr_file_struct.act_map_sec=act_map_sec;
+            curr_file_struct.template_sec=template_sec;
             curr_file_struct.template=template;
         end
     catch

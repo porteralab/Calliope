@@ -1,11 +1,12 @@
-function check_backup(instr,varargin)
+function varargout=check_backup(instr,varargin)
 % checks if data is backed up
 %
 % checks location of all data associeated with stack IDs entered in the
 % database (stacks.xls file).
 %
 % function can be called without input (check all) or with
-% instr: username (FMI) or animal ID
+% instr:    username (FMI) or animal ID
+% selX:     only display stacks errors
 %
 % e.g.
 % check_backup()
@@ -44,25 +45,24 @@ if ~successfully_connected
    end
 end
 
-[paths_to_check_tmp,paths_to_check,archive]=define_backup_paths;
-adata_dir=set_lab_paths;
+[paths_to_check_tmp1,paths_to_check1,archive] = define_backup_paths;
+adata_dir = set_lab_paths;
 
-reload_adata_list=0;
+reload_adata_list = 0;
+found_error=0;
 
 if reload_adata_list
-    [adata_list]=list_all_adata_files(adata_dir,1);
+    [adata_list] = list_all_adata_files(adata_dir,1);
 else
     load([adata_dir 'adata_list.mat'],'adata_list');
 end
 
-paths_to_check=paths_to_check(:,1);
-paths_to_check{end+1}=archive;
-paths_to_check_tmp=paths_to_check_tmp(1:4,1);
+paths_to_check = paths_to_check1(:,1);
+paths_to_check{end+1} = archive;
+paths_to_check_tmp = paths_to_check_tmp1(:,1);
 
+if evalin('base','exist(''ExpLog'',''var'')'), evalin('base','clear ExpLog;'); disp('NC: cleared ExpLog from ''base'' workspace'); end
 ExpLog = getExpLog;
-
-ftypes={'bin' 'ini' 'lvd' 'eye' 'vid' 'vid2' 'run'};
-ftype_value=[10 1 0.1 0.01 0.001 0.0001 0.00001];
 
 stack_ids=cell2mat(ExpLog.stackid);
 animal_ids=ExpLog.animalid;
@@ -94,7 +94,8 @@ if ~isempty(instr)
     has_adata=has_adata(subset);
 end
 
-found_it=cell(length(stack_ids),length(paths_to_check_tmp)+length(paths_to_check));
+num_dirs=length(paths_to_check_tmp)+length(paths_to_check);
+found_it=cell(length(stack_ids),num_dirs);
 datenum_check=cell(length(stack_ids),length(paths_to_check_tmp)+length(paths_to_check));
 fsizes=zeros(length(stack_ids),2);
 
@@ -126,10 +127,6 @@ for ind=1:length(paths_to_check_tmp)
     for knd=1:length(stack_ids)
         matches=find(curr_ids==stack_ids(knd));
         if matches
-            %             curr_val=0;
-            %             for lnd=1:length(matches)
-            %                 curr_val=curr_val+ftype_value(strcmp(ftypes,curr_ftype{matches(lnd)}));
-            %             end
             found_it{knd,ind}=length(matches);
             datenum_check{knd,ind}=curr_datenum(matches);
         end
@@ -195,10 +192,6 @@ for ind=1:length(paths_to_check)
     for knd=1:length(stack_ids)
         matches=find(curr_ids==stack_ids(knd));
         if matches
-            %             curr_val=0;
-            %             for lnd=1:length(matches)
-            %                 curr_val=curr_val+ftype_value(strcmp(ftypes,curr_ftype{matches(lnd)}));
-            %             end
             found_it{knd,ind+length(paths_to_check_tmp)}=length(matches);
             datenum_check{knd,ind+length(paths_to_check_tmp)}=curr_datenum(matches);
             try
@@ -221,7 +214,6 @@ end
 
 
 
-num_dirs=length(paths_to_check_tmp)+length(paths_to_check);
 selection =[];
 for knd=1:length(stack_ids)
     names{knd}=num2str(stack_ids(knd));
@@ -259,9 +251,11 @@ for knd=1:length(stack_ids)
 end
 
 
-label_str=['AD' '\t|\t' 'Stack' '\t|\t' 'Date' '\t\t|\t' 't1I' '\t' 't1X' '\t' 't2I' '\t' 't2X' '\t|\t' 'r1A' '\t' 'r1I' '\t' 'r1X' '\t'  'r1S' '\t' 'r2A' '\t'...
-    'r2I' '\t' 'r2X' '\t' 'r2B' '\t' 'r3A' '\t' 'r4A' '\t' 'tun' '\t|\t' 'Arc' '\t|\t' 'con' '\t|\t' 'animal' '\t\t\t' 'user' '\t\t' 'proj' '\t'...
-    'lvd[MB]' '\t' 'bin/lvd'];
+label_str=['AD' '\t|\t' 'Stack' '\t|\t' 'Date' '\t\t|\t' ...
+    strjoin(paths_to_check_tmp1(:,2),'\t') '\t|\t'...
+    strjoin(paths_to_check1(:,2),'\t') '\t|\t' ...
+    'Arc' '\t|\t' 'con' '\t|\t' 'animal' '\t\t\t' 'user' '\t\t' ...
+    'proj' '\t' 'lvd[MB]' '\t' 'bin/lvd'];
 
 if nargin==0
     fid=fopen([adata_dir '_ErrorLog\check_backup.txt.'],'wt');
@@ -271,62 +265,66 @@ end
 
 if ~selX
     selection_all = 1:size(found_it,1);
-    disp('_________________________________________________________________________________________________________________________________________________________________')
-    disp(sprintf(label_str))
-    disp('_________________________________________________________________________________________________________________________________________________________________')
+    fprintf([repmat('_',1,195) '\n'])
+    fprintf([label_str '\n'])
+    fprintf([repmat('_',1,195) '\n'])
     
 
     for ind=1:length(selection_all)
         if showNonArchivedOnly && sum([found_it{selection_all(ind),5:14}]) == 0 && found_it{selection_all(ind),15} > 0
             % do not display fully archived files if option is set
         else
-            prntstr=[num2str(has_adata(selection_all(ind))) '\t|\t' names{selection_all(ind)} '\t|\t' dates{selection_all(ind)} '\t|\t' num2str(found_it{selection_all(ind),1}) '\t' num2str(found_it{selection_all(ind),2}) '\t' ...
-                num2str(found_it{selection_all(ind),3}) '\t' num2str(found_it{selection_all(ind),4}) '\t|\t' num2str(found_it{selection_all(ind),5}) '\t' ...
-                num2str(found_it{selection_all(ind),6}) '\t' num2str(found_it{selection_all(ind),7}) '\t' num2str(found_it{selection_all(ind),8}) '\t'  num2str(found_it{selection_all(ind),9}) '\t'...
-                num2str(found_it{selection_all(ind),10}) '\t' num2str(found_it{selection_all(ind),11}) '\t' num2str(found_it{selection_all(ind),12}) '\t' num2str(found_it{selection_all(ind),13}) '\t'...
-                num2str(found_it{selection_all(ind),14}) '\t' num2str(found_it{selection_all(ind),15}) '\t|\t' num2str(found_it{selection_all(ind),16}) '\t|\t' found_it{selection_all(ind),17} '\t|\t' ...
-                found_it{selection_all(ind),18} '  \t' found_it{selection_all(ind),19} '  \t' found_it{selection_all(ind),20} '  \t' ...
+            prntstr=[num2str(has_adata(selection_all(ind))) '\t|\t' names{selection_all(ind)} '\t|\t' dates{selection_all(ind)} '\t|\t' ...
+                strjoin(cellfun(@num2str,found_it(selection_all(ind),1:length(paths_to_check_tmp)),'un',0),'\t') '\t|\t' ...
+                strjoin(cellfun(@num2str,found_it(selection_all(ind),length(paths_to_check_tmp)+1:num_dirs-1),'un',0),'\t') '\t|\t'...
+                num2str(found_it{selection_all(ind),num_dirs}) '\t|\t' found_it{selection_all(ind),num_dirs+1} '\t|\t' ...
+                strjoin(found_it(selection_all(ind),end-2:end),'  \t') '  \t' ...
                 num2str(fsizes(selection_all(ind),1)) '  \t' num2str(fsizes(selection_all(ind),2)) '\n'];
             fprintf(prntstr);
             if nargin==0
-                fprintf(fid,[prntstr]);
+                fprintf(fid,prntstr);
             end
         end
     end
     
-    disp('_________________________________________________________________________________________________________________________________________________________________')
-    disp(sprintf(label_str))
+    fprintf([repmat('_',1,195) '\n'])
+    fprintf([label_str '\n'])
 end
 
 if ~isempty(selection)
+    found_error=1;
     disp(' ')
     disp(' ')
-    disp('******************************************** WARNING BACKUP PROBLEMS FOUND - FIX THESE IMMEDIATELY! *************************************************************')
-    disp('_________________________________________________________________________________________________________________________________________________________________')
-    disp(sprintf(label_str))
-    disp('_________________________________________________________________________________________________________________________________________________________________')
+    disp('************************************************** WARNING BACKUP PROBLEMS FOUND - FIX THESE IMMEDIATELY! ******************************************************************')
+    fprintf([repmat('_',1,195) '\n'])
+    fprintf([label_str '\n'])
+    fprintf([repmat('_',1,195) '\n'])
+    
     for ind=1:length(selection)
-        prntstr=[num2str(has_adata(selection(ind))) '\t|\t' names{selection(ind)} '\t|\t' dates{selection(ind)} '\t|\t' num2str(found_it{selection(ind),1}) '\t' num2str(found_it{selection(ind),2}) '\t' ...
-            num2str(found_it{selection(ind),3}) '\t' num2str(found_it{selection(ind),4}) '\t|\t' num2str(found_it{selection(ind),5}) '\t' ...
-            num2str(found_it{selection(ind),6}) '\t' num2str(found_it{selection(ind),7}) '\t' num2str(found_it{selection(ind),8}) '\t' num2str(found_it{selection(ind),9}) '\t' ...
-            num2str(found_it{selection(ind),10}) '\t' num2str(found_it{selection(ind),11}) '\t' num2str(found_it{selection(ind),12}) '\t' num2str(found_it{selection(ind),13}) '\t'...
-            num2str(found_it{selection(ind),14}) '\t' num2str(found_it{selection(ind),15}) '\t|\t' num2str(found_it{selection(ind),16}) '\t|\t' found_it{selection(ind),17} '\t|\t' ...
-            found_it{selection(ind),18} '  \t' found_it{selection(ind),19} '  \t' found_it{selection(ind),20} '  \t' ...
+         prntstr=[num2str(has_adata(selection(ind))) '\t|\t' names{selection(ind)} '\t|\t' dates{selection(ind)} '\t|\t' ...
+            strjoin(cellfun(@num2str,found_it(selection(ind),1:length(paths_to_check_tmp)),'un',0),'\t') '\t|\t' ...
+            strjoin(cellfun(@num2str,found_it(selection(ind),length(paths_to_check_tmp)+1:num_dirs-1),'un',0),'\t') '\t|\t'...
+            num2str(found_it{selection(ind),num_dirs}) '\t|\t' found_it{selection(ind),num_dirs+1} '\t|\t' ...
+            strjoin(found_it(selection(ind),end-2:end),'  \t') '  \t' ...
             num2str(fsizes(selection(ind),1)) '  \t' num2str(fsizes(selection(ind),2)) '\n'];
         fprintf(prntstr);
         if nargin==0
-            fprintf(fid,[prntstr]);
+            fprintf(fid,prntstr);
         end
     end
-    disp('_________________________________________________________________________________________________________________________________________________________________')
-    disp(sprintf(label_str))
-    disp('******************************************** WARNING BACKUP PROBLEMS FOUND - FIX THESE IMMEDIATELY! *************************************************************')
+    fprintf([repmat('_',1,195) '\n'])
+    fprintf([label_str '\n'])
+    disp('************************************************** WARNING BACKUP PROBLEMS FOUND - FIX THESE IMMEDIATELY! ******************************************************************')
 end
 
 
 if nargin==0
     fprintf(fid,[label_str ' \n']);
     fclose(fid);
+end
+
+if nargout>0 %if output requested: output boolean to indicate whether (any) error was detected
+    varargout{1}=found_error;
 end
 
 if successfully_connected

@@ -67,7 +67,9 @@ end
 try
     if just_behave==0
         load([adata_dir '\' userID '\' mouse_id '\' adata_file]);
-         aux_files=regexprep((aux_files),'.*RawData\\+',strrep(data_dir,'\','\\'),'ignorecase'); %replace data_dir with dir get_data_path 
+        if exist('aux_files','var')
+            aux_files=regexprep((aux_files),'.*RawData\\+',strrep(data_dir,'\','\\'),'ignorecase'); %replace data_dir with dir get_data_path
+        end
         if ~exist('mean_data','var')
             if ~exist('ROItrans','var');
                 if isa(ROIs,'cell')
@@ -103,8 +105,8 @@ try
         [ExpInfo,data_dir] = read_info_from_ExpLog(ExpID,0);
         aux_files=ExpInfo.aux_files;
     end
-catch
-    disp('Could not load analyzed data!');
+catch me
+    fprintf('Could not load analyzed data (%s)\n',me.message);
     return;
 end
 
@@ -177,7 +179,7 @@ if load_aux
         if just_behave==0
             if strcmp(mouse_id,'PZ_110818_a')
                 tmp_frames=get_frame_times(tmp_data(3,:));
-            else    
+            else
                 tmp_frames=get_frame_times(tmp_data(2,:));
             end
             
@@ -217,7 +219,7 @@ if load_aux
         aux_data(1:size(tmp_data,1),end+1:end+length(tmp_data))=tmp_data;
     end
     
-    if strcmp(mouse_id,'PZ_110818_a') 
+    if strcmp(mouse_id,'PZ_110818_a')
         frame_times=get_frame_times(aux_data(3,:));
     else
         frame_times=get_frame_times(aux_data(2,:));
@@ -464,7 +466,7 @@ if load_eye
             no_eye_data=1;
             break
         end
-            
+        
         nbr_iframes(ind)=length(tmp_imeta_data);
         if ind==1||sum(size(idata(:,:,1))==size(tmp_idata(:,:,1)))==2
             idata(:,:,end+1:end+size(tmp_idata,3))=tmp_idata;

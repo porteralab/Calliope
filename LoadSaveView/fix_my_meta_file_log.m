@@ -68,6 +68,7 @@ end
 disp([' ']);
 disp([' ']);
 
+ExpLog_requested=getExpLog; 
 
 for ind=1:length(my_files)
     if ~has_description(ind,1)
@@ -79,7 +80,9 @@ for ind=1:length(my_files)
             disp([' ']);
             disp(['--------------------------------------------------------']);
             disp([ my_files(ind).name ' does not have a description'])
-            description=input(['What should it be (s: skip): '],'s');
+            acode=regexpi(my_files(ind).name,'\d+','match','once');
+            fprintf('\ncomment of first/last stack (with acode=%s): \n1st:\t%s \nlast:\t%s\n\n',num2str(acode),cell2mat(qexp('acode',acode,'ExpLog',ExpLog_requested,'pi',userID,'first',1,'comment')),cell2mat(qexp('acode',acode,'ExpLog',ExpLog_requested,'pi',userID,'last',1,'comment'))) 
+            description=strtrim(input('What should it be (s: skip): ','s'));
             disp([' ']);
             if strcmp(description,'s')
                 skip=1;

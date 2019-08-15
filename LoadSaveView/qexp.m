@@ -74,7 +74,7 @@ for ind=1:size(condis,2)
             error('could not identify date variable');
         end
         idx(ix,ind)=1;
-    elseif strcmp(f,'last')
+    elseif any(strcmp(f,{'first','last'}))
         idx(:,ind)=1;%do stuff later
     elseif any(strcmp(f,{'cregex','regex','regexp'}))
         idx(:,ind)=1;%do stuff later
@@ -96,8 +96,9 @@ if any(~cellfun('isempty',regexpi(condis,'regex|regular','once','match')))
         regexpi(condis,'regex|regular'))})))=0;
 end
 
-%only output last X elements
+%only output first/last X elements
 if any(strcmp(condis,'last')) && sum(idx)>vals{strcmp(condis,'last')}, idx(1:(min(find(idx, vals{strcmp(condis,'last')}, 'last'))-1)) = false; end
+if any(strcmp(condis,'first')) && sum(idx)>vals{strcmp(condis,'first')}, idx((max(find(idx, vals{strcmp(condis,'first')}, 'first'))+1):end) = false; end
 
 %output ExpLog or ExpLog field
 if ~exist('output','var') || (exist('output','var') && any(strcmp(output,{'act','activity','addact','inclact'}))) %output not specified

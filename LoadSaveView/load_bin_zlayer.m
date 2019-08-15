@@ -26,7 +26,7 @@ end
 if applyreg %load whole exp
     warning('loading the whole experiment...');
     ExpLog=getExpLog;
-    if isnumeric(expid)
+    if isnumeric(fnames)
         expid=ExpLog.expid{[ExpLog.stackid{:}]==expid};
         fnames=getfield(read_info_from_ExpLog(expid),'fnames');
     end
